@@ -10,6 +10,8 @@
 
 #define  BUFF_SIZE 1024
 
+int clients[100] = {};
+
 void client_listener(int client_socket) {
   if (client_socket == -1) {
     printf("client accept fail");
@@ -20,8 +22,8 @@ void client_listener(int client_socket) {
   double time_passed = 0;
 
   char buff[BUFF_SIZE];
-  while (time_passed < 10) {
-    read (client_socket, buff, BUFF_SIZE);
+  while(time_passed < 10) {
+    read(client_socket, buff, BUFF_SIZE);
     printf("[%d][%f] receive: %s\n", client_socket, time_passed, buff);
     write(client_socket, buff, strlen(buff)+1);
     current_time = time(NULL);
