@@ -9,6 +9,7 @@
 #include <pthread.h>
 
 #define BUFF_SIZE 1024
+#define CONNECT_TIME 30
 
 void server_listener(int server_socket) {
   if (server_socket == -1) {
@@ -20,7 +21,7 @@ void server_listener(int server_socket) {
   double time_passed = 0;
 
   char buff[BUFF_SIZE];
-  while(time_passed < 10) {
+  while(time_passed < CONNECT_TIME) {
     read(server_socket, buff, BUFF_SIZE);
     printf("[%d][%f] receive: %s\n", server_socket, time_passed, buff);
     current_time = time(NULL);
