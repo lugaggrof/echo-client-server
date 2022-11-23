@@ -11,25 +11,32 @@
 #define BUFF_SIZE 1024
 #define CONNECT_TIME 30
 
-int clients[100] = {};
-int client_index = 0;
 int echo = 0;
 int broadcast = 0;
 
-void add_client(int client_socket) {
-  clients[client_index] = client_socket;
-  printf("added client %d at index %d\n", client_socket, client_index);
-  client_index += 1;
-}
+int* handle_client(int mode, int client_socket) {
+  int static clients[1024] = {};
+  int static client_index = 0;
 
-void remove_client(int client_socket) {
-  for(int i = 0; i < client_index; i++) {
-    if (clients[i] == client_socket) {
-      clients[i] = 0;
-      printf("removed client %d at index %d\n", client_socket, i);
+  if (mode == 0) {
+    return clients;
+  } else if (mode == 1) {
+    clients[client_index] = client_socket;
+    printf("added client %d at index %d\n", client_socket, client_index);
+    client_index += 1;
+  } else if (mode == 2) {
+    for(int i = 0; i < client_index; i++) {
+      if (clients[i] == client_socket) {
+        clients[i] = -1;
+        printf("removed client %d at index %d\n", client_socket, i);
+      }
     }
+  } else {
+    printf("invalid mode %d, available mode is 0, 1, 2\n");
+    exit(1);
   }
 }
+
 
 void client_listener(int client_socket) {
   if (client_socket == -1) {
@@ -48,17 +55,19 @@ void client_listener(int client_socket) {
       write(client_socket, buff, strlen(buff)+1);
     }
     if (broadcast) {
-      for (int i = 0; i < client_index; i++) {
-        if (clients[i] > 0 && clients[i] != client_socket) {
-          write(clients[i], buff, strlen(buff)+1);
+      int* clients = handle_client(0, NULL);
+      while (*clients != 0) {
+        if (*clients != -1 && *clients != client_socket) {
+          write(*clients, buff, strlen(buff)+1);
         }
+        clients += 1;
       }
     }
     current_time = time(NULL);
     time_passed = difftime(current_time, start_time); 
   }
   printf("[%d] connection closed\n", client_socket); 
-  remove_client(client_socket);
+  handle_client(2, client_socket);
   close(client_socket);
 }
 
@@ -104,7 +113,7 @@ int main(int argc, char** argv) {
   while(1) {
     client_addr_size = sizeof(client_addr);
     client_socket = accept(server_socket, (struct sockaddr*) &client_addr, &client_addr_size);
-    add_client(client_socket);
+    handle_client(1, client_socket);
     pthread_t thread_id;
     pthread_create(&thread_id, NULL, client_listener, client_socket);
     pthread_detach(thread_id);
